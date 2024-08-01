@@ -1,4 +1,5 @@
 ﻿open System.Net.Http
+open FSharp.Data
 
 // For more information see https://aka.ms/fsharp-console-apps
 printfn "Hello from F#"
@@ -94,3 +95,24 @@ printfn $"""{better_url_builder "https" "github.com" "microsoft/fsharp"}"""
 // But this will flag an error in our editor and the compiler:
 // printfn $"""{better_url_builder 1 "github.com" (1.0, 2.0)}"""
 
+// Option type
+// The option type is like null in other languages, where a function may produce
+// `Some` data or it may produce `None`, to do this we must annotate our return
+// value as an `option`: 
+let get_html (html_file : string) : HtmlDocument option =
+    try
+        let html = HtmlDocument.Load(html_file)
+        Some(html)
+    with ex ->
+        printfn $"error: {ex}"
+        None
+
+// Calling HtmlDocument.Load directly with an invalid uri argument would
+// cause an error:
+// let my_html_file = HtmlDocument.Load "nofile"
+
+// our `get_html` function would still error, but it returns `None` when it does
+// which we can handle far more gracefully:
+// let my_html_file = get_html "no_file"
+
+(* PIPELINES *)
