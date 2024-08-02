@@ -116,3 +116,35 @@ let get_html (html_file : string) : HtmlDocument option =
 // let my_html_file = get_html "no_file"
 
 (* PIPELINES *)
+// We can chain functions together using pipelines, this allows us to compose
+// compaund functions from other smaller functions
+let get_links (html : HtmlDocument option) =
+    // pattern matching over option type to get 'a' tags
+    match html with
+    | Some (x) -> x.Descendants [ "a" ]
+    | None -> Seq.empty
+
+// We could simply use one function as the argument to another
+// get_links (get_html "no_file")
+
+let html_doc = "https://www.antibubble.org/index.html"
+
+// But F# allows us to pipeline between values and functions
+html_doc
+    |> get_html
+    |> get_links
+    |> printfn "%A"
+// Here we have a freestanding String that represents a HTML document, we then
+// pipeline this as the input of get_html, we pipeline get_html's output as the
+// input of get_links, and finally we pipeline get_links' output to printfn.
+
+// However, we are still simply pipelining the input and outputs of functions
+// we can compose entirely new functions with the composition operator `>>`:
+let links_from_html =
+    get_html >> get_links
+
+// Now we can use this new compound function as a single function on it's own or
+// within a pipeline:
+html_doc
+    |> links_from_html
+    |> Seq.iter (fun x -> printfn $"{x}")
