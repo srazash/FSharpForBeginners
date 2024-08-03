@@ -148,3 +148,78 @@ let links_from_html =
 html_doc
     |> links_from_html
     |> Seq.iter (fun x -> printfn $"{x}")
+
+(* TUPLES, RECORDS & DISCRIMINATED UNIONS *)
+// Tuples allow us to group unnamed values of different types in order.
+let point = (1.0, 2.0)
+let github_stars = ("dotnet/fsharp", 2800)
+
+// We can access the first and second items in a tuple using the `fst` and `snd`
+// keywords:
+printfn $"The GitHub repo '{fst github_stars}' has {snd github_stars} stars"
+
+// Tuple values can be bound to value names:
+let repo_name, repo_stars = github_stars
+// If we only wanted a single value from the tuple we could discard the value we
+// didn't want with the `_` operator:
+// let _, repo_stars = github_stars
+
+printfn $"The GitHub repo '{repo_name}' has {repo_stars} stars"
+
+// It is worth noting that while tuples generally contain two values this is not
+// a hard limit and tuples can contain any number of values.
+
+// Tuples are specifically groupings of UNNAMED values, which can cause problems
+// if we need to identify what the values represent, we can name our values with
+// records.
+
+// We desfine a record with the `type` kayword and using curly brackets instead
+// instead of parentheses:
+type GithubStars = { Repo: string; Stars: int }
+
+// We create a new record by binding values to the record labels, based on the
+// record labels the compiler is able to infer the type of record:
+let github_stars_1 = { Repo = "dotnet/fsharp"; Stars = 2800 }
+
+// We access the values in a record with dot notation:
+printfn $"The GitHub repo '{github_stars_1.Repo}' has {github_stars_1.Stars} stars"
+
+// In F# all values are immutable by default, so if we want to change a single
+// value in a record we copy the original record and update the value using the
+// `with` keyword:
+let github_stars_2 = { github_stars_1 with Stars = 2900 }
+printfn $"The GitHub repo '{github_stars_2.Repo}' has {github_stars_2.Stars} stars"
+
+// To work with members we can use the `member` keyword to define functions
+// specific to this type of record after the record definition:
+type GithubStarsWithMembers =
+    { MRepo: string; MStars: int }
+    // when accessing members we use the `this` keyword
+    member this.GetRepoUrl () =
+        $"https://github.com/{this.MRepo}"
+    // otherwise we can use the `_` operator
+    member _.GetUrl () =
+        "https://github.com/"
+
+let github_stars_3 = { MRepo = "dotnet/fsharp"; MStars = 2800 }
+// Note we access member functions with `()` on the end of their names to
+// differentiate them from a records fields:
+printfn $"{github_stars_3.GetRepoUrl()}"
+
+// Discriminated unions let us define unions of different value types we may
+// want to apply to our records, again we define them with the `type` keyword
+// and list our types with the `|` operator:
+type RepoState =
+    | Archived
+    | Active of {| Maintainer: string |} // here we add an anonymous record to define a Maintainer string
+
+type GithubStarsWithState =
+    { Repo: string; Stars: int; State: RepoState }
+
+let (github_stars_4: GithubStarsWithState) =
+    // because our state is `Active` we also need to specify a Maintainer value:
+    { Repo = "dotnet/fsharp"; Stars = 3000; State = Active {|Maintainer = "Microsoft"|} }
+
+let (github_stars_5: GithubStarsWithState) =
+    // here our `Archived` state doesn't require a Maintaniner value:
+    { Repo = "dotnet/fsharp"; Stars = 3000; State = Archived }
