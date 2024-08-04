@@ -1,4 +1,5 @@
 ﻿open System.Net.Http
+open System.IO
 open FSharp.Data
 
 // For more information see https://aka.ms/fsharp-console-apps
@@ -223,3 +224,107 @@ let (github_stars_4: GithubStarsWithState) =
 let (github_stars_5: GithubStarsWithState) =
     // here our `Archived` state doesn't require a Maintaniner value:
     { Repo = "dotnet/fsharp"; Stars = 3000; State = Archived }
+
+(* Classes & Interfaces *)
+// Like C#, F# has a notion of classes, with properties and methods, to define a
+// class we again use the `type` keyword:
+type Repo(name: string, stars: int) =
+    // we have private properties and methods, denoted by the `let` keyword
+    let base_url = "https://github.com/"
+
+    let increment_stars_by stars num = stars + num
+
+    // we can define a constructor
+    new() = Repo("", 0)
+
+    // we have instance properties, denoted by the `member` keyword
+    // which are immutable by default
+    member this.Name = name
+    // or can be made mutable with the `val` keyword
+    member val Stars = stars with get, set
+
+    // we have static methods
+    // (note method names end with `()`)
+    static member PrintHelp() = "Class that contains repo information"
+
+    // and instance methods
+    member _.GetBaseUrl() = $"{base_url}"
+    member this.GetRepoUrl() = $"{base_url}{this.Name}"
+    member this.IncrementStarsBy(n) = this.Stars <- increment_stars_by this.Stars n
+
+// Accessing a static method with no instance of the class
+printfn $"{Repo.PrintHelp()}"
+
+// Create an instance of our class
+let fsharp_repo = Repo("dotnet/fsharp", 3100)
+// or we can create a blank instance
+// let blank_repo = Repo()
+
+// And we can access members and properties of our instance using dot notation
+printfn $"{fsharp_repo.Name}"
+printfn $"{fsharp_repo.GetRepoUrl()}"
+fsharp_repo.Stars <- 3200
+fsharp_repo.IncrementStarsBy(50)
+printfn $"{fsharp_repo.Stars}"
+
+// Interfaces are like classes without an implementation, they define the 'what'
+// of a class, but not the 'how', which is left to the specific implemenation.
+// For example, who different classes (Cat and Dog) may implement a Noise()
+// method, but the individual classes implement this method differently.
+// Additionally, F# also has Object Expressions that simplify the process of
+// implementing an interface.
+
+// Interfaces are again defined with the `type` keyword, but members are
+// abstract and only contain type annonations
+type IHtmlParser =
+    abstract member ParseHtml : string -> HtmlDocument
+
+// To implement the inteface we use the `interface` and `with` keywords
+type WebParser () =
+    interface IHtmlParser with
+        member this.ParseHtml url = HtmlDocument.Load(url)
+
+    // to expose interface members we add methods
+    member this.ParseHtml url = (this :> IHtmlParser).ParseHtml(url)
+
+type FileParser () =
+    interface IHtmlParser with
+        member this.ParseHtml filepath =
+            filepath
+            |> File.ReadAllText
+            |> fun x -> HtmlDocument.Parse(x)
+    member this.ParseHtml filepath = (this :> IHtmlParser).ParseHtml(filepath)
+
+// create parsers
+let class_web_parser = WebParser() :> IHtmlParser
+let class_file_parser = FileParser() :> IHtmlParser
+
+// function to handle HTML parsing
+let parse_html (parser: IHtmlParser) (source: string) = parser.ParseHtml(source)
+
+// use web parser
+printfn $"Web parse: {parse_html class_web_parser (fsharp_repo.GetRepoUrl())}"
+
+let path = Path.Join(__SOURCE_DIRECTORY__, "example.html")
+let content = parse_html class_web_parser (fsharp_repo.GetRepoUrl())
+File.WriteAllText(path, content.ToString())
+
+// use file parser
+printfn $"File parser: {parse_html class_file_parser path}"
+
+// Object Expressions implyfy the process of implementing interfaces
+// They are enclosed in curby braces `{ ... }`
+
+let web_parser =
+    { new IHtmlParser with
+        member this.ParseHtml url = HtmlDocument.Load(url) }
+
+let file_parser =
+    { new IHtmlParser with
+        member this.ParseHtml filepath =
+            filepath
+            |> File.ReadAllText
+            |> fun x -> HtmlDocument.Parse(x) }
+
+printfn $"Web parse 2: {parse_html web_parser (fsharp_repo.GetRepoUrl())}"
+printfn $"File parser 2: {parse_html file_parser path}"
