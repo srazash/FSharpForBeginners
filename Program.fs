@@ -1,4 +1,5 @@
-﻿open System.Net.Http
+﻿open System
+open System.Net.Http
 open System.IO
 open FSharp.Data
 
@@ -328,3 +329,150 @@ let file_parser =
 
 printfn $"Web parse 2: {parse_html web_parser (fsharp_repo.GetRepoUrl())}"
 printfn $"File parser 2: {parse_html file_parser path}"
+
+(* COLLECTIONS *)
+// Collections are types which contain a series of items of the same type
+
+// List - immutable, ordered series of items
+let my_list = [1; 2; 3; 4; 5; 6; 7; 8; 9; 10;]
+printfn $"{my_list}"
+// we can create a list with the in-built creation functions
+// (the type of the list is inferred by the compiler here, so `<int>` isn't needed)
+let my_list_2 = List.init<int> 10 (fun i -> i + 1)
+printfn $"{my_list_2}"
+// or we can use inline initialisation, like for `my_list` above
+// or with a range
+let my_list_3 = [1 .. 10]
+printfn $"{my_list_3}"
+
+// Array - mutable, random access, fixed size, multidimensional
+let my_array = [|1; 2; 3|]
+// like with lists we can use a array creation functions
+let my_array_2 = Array.init<int> 10 (id)
+// and we can also initialise multi dimensional arrays
+let my_array_2d = Array2D.init<int> 3 3 (fun x _ -> x)
+let my_array_3d = Array3D.init<int> 3 3 3 (fun _ _ z -> z)
+// like lists, arrays can be initialised inline including with a range
+let my_array_3 = [|1; 2; 3; 4; 5; 6; 7; 8; 9; 10|]
+let my_array_4 = [|1 .. 10|]
+
+// Sequence - immutable, items computed as needed
+let my_seq = seq {1; 2; 3}
+// once again, sequences can be initialised with creation functions
+let my_seq_2 = Seq.init<int> 10 (fun i -> i)
+// because sequences are computed we can technicall have an infinite sequence,
+// whose items are calculated from the lambda function we initialise it with
+let my_seq_3 = Seq.initInfinite (fun i -> i)
+// once again, sequences can be initialised inline and with ranges
+// but must be initialised with the `seq§ keyword
+let my_seq_4 = seq {1; 2; 3; 4; 5; 6; 7; 8; 9; 10}
+let my_seq_5 = seq {1 .. 10}
+
+// Map - immutable, key-value pairs
+
+// Set - immutable, sitinct items
+
+(* ACCESSING ELEMENTS *)
+type Transaction =
+    {   Date: DateTime
+        CustomerId: string
+        Amount: double  }
+
+let transactions =
+    [
+        {   Date = new DateTime(2024,8,2)
+            CustomerId = "Acme Limited"
+            Amount = 2400.00    }
+        {   Date = new DateTime(2024,8,3)
+            CustomerId = "Loony Tunes Inc"
+            Amount = 1500.00    }
+        {   Date = new DateTime(2024,8,3)
+            CustomerId = "Acme Limited"
+            Amount = 1800.00    }
+    ]
+
+// returns the first item
+printfn $"{transactions.Head}"
+
+// returns the remaining items
+printfn $"{transactions.Tail}"
+
+// we can access list items by index, although this is more efficient on arrays
+// returns the first item (by index)
+printfn $"{transactions.[0]}"
+
+// returns the remaining items (by index range)
+printfn $"{transactions.[1..]}"
+
+// we can use built-in collection operations
+transactions
+    // attemptimng to `.find` a non-exitent customer id would cause an error!
+    |> List.find (fun t -> t.CustomerId = "Acme Limited")
+    |> printfn "Result: %A"
+
+// Use `.tryFind` where an item may not exist, this will return an option type
+// so if no item is found it will return None.
+transactions
+    |> List.tryFind (fun t -> t.CustomerId = "Acme Ltd")
+    |> printfn "Result: %A"
+
+// We can append and prepend a list
+let to_dos = ["Learn F#"; "Build a killer F# app"; "$$$"]
+
+// append
+let to_dos_updated = ["Repeat"] |> List.append to_dos
+// prepend
+let to_dos_updated_again = to_dos_updated |> List.append ["Make coffee"]
+
+printfn $"{to_dos_updated_again}"
+
+// we can convert collections
+let to_do_array = to_dos |> Array.ofList
+let to_do_seq = to_dos |> Seq.ofList
+
+// we can apply various operations to lists
+// map
+transactions
+    |> List.map
+        ( fun t ->
+            let vat = 0.20
+            {|  before_vat = t.Amount
+                vat_added = t.Amount * vat
+                total = t.Amount * (1.0 + vat)  |})
+    |> printfn "%A"
+
+// iter
+transactions
+    |> List.iter (fun t -> printfn $"{t.CustomerId}")
+
+// sumBy
+transactions
+    |> List.sumBy (fun t -> t.Amount)
+    |> printfn "%A"
+
+// averageBy
+transactions
+    |> List.averageBy (fun t -> t.Amount)
+    |> printfn "%A"
+
+// filter
+transactions
+    |> List.filter (fun t -> t.Date > DateTime(2024, 8, 2))
+    |> printfn "%A"
+
+// sortBy
+transactions
+    |> List.sortBy (fun t -> t.Amount)
+    |> printfn "%A"
+
+// sortByDescending
+transactions
+    |> List.sortByDescending (fun t -> t.Amount)
+    |> printfn "%A"
+
+// these operations can be combined using pipelines
+// here we filter for transactions greater than 1500.00 and sort by desc date
+transactions
+    |> List.filter (fun t -> t.Amount > 1500.00)
+    |> List.sortByDescending (fun t -> t.Date)
+    |> printfn "%A"
