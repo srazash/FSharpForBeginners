@@ -563,3 +563,18 @@ Email "keir.starmer.mp@parliament.uk"
 
 VoiceMail { Code=44; Number="1234 567890" }
 |> send_message my_message
+
+(* MODULES *)
+// PLEASE REFER TO MODULES.FS FOR THE INITIAL MODULES CODE!
+open Modules.Domain
+open Modules.Messenger
+
+let module_messages =
+    [   "F# is good!", MPostalMail { HouseNumber=10; StreetName="Downing Street" }
+        "Learn F#!", MEmail "everyone@everywhe.re"
+        "F# is succinct, performant and robust!", MVoiceMail { Code=44; Number="1234 567890" }]
+
+module_messages
+|> List.iteri (fun i (message, method) ->
+                printf $"{i}. "
+                msend_message message method)
