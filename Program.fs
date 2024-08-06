@@ -578,3 +578,60 @@ module_messages
 |> List.iteri (fun i (message, method) ->
                 printf $"{i}. "
                 msend_message message method)
+
+(* ASYNC PROGRAMMING *)
+// Async is non-blocking code, async code executes in the background as other
+// tasks are working, and send a signal to indicate the task is complete
+let get_html_async (source: string) =
+    // we define an `async` type:
+    async {
+        // we use `let!` to bind the result of a call to an async function
+        // here we call the `.AsyncLoad` function
+        let! html = HtmlDocument.AsyncLoad(source)
+        return html
+    }
+
+"http://reviews.20m.com"
+|> get_html_async
+|> Async.RunSynchronously
+|> printfn "%A"
+
+// because of their async nature we can run multiple instances of the same async
+// functions in parallel
+let documents_async =
+    [   "http://www.synapses.co.uk/science/fluvirus.html"
+        "http://ra.afraid.org"
+        "https://chipford.com/list/list_life.htm"]
+
+// run in parallel - this does not guarantee order of execution
+documents_async
+|> List.map get_html_async
+|> Async.Parallel
+|> Async.RunSynchronously
+|> printfn "%A"
+
+// run sequentially - this does guarantee order of execution
+documents_async
+|> List.map get_html_async
+|> Async.Sequential
+|> Async.RunSynchronously
+|> printfn "%A"
+
+// TASK INTEROP
+// the async type is an F# construct, other .NET languages use Tasks
+// to enable interop between them we need a way to convert Tasks to the async
+// type and vice versa
+let get_html_task (source: string) =
+    async {
+        use client = new HttpClient()
+        // here we call on the .NET HttpClient which returns a Task and convert
+        // it to the async type with `Async.AwaitTask`:
+        let! html = client.GetStringAsync(source) |> Async.AwaitTask
+        let parsed = HtmlDocument.Parse html
+        return parsed
+    }
+
+"https://listman.redhat.com/archives/fedora-list/2004-February/msg04343.html"
+|> get_html_task
+|> Async.RunSynchronously
+|> printfn "%A"
