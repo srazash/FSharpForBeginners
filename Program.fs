@@ -476,3 +476,90 @@ transactions
     |> List.filter (fun t -> t.Amount > 1500.00)
     |> List.sortByDescending (fun t -> t.Date)
     |> printfn "%A"
+
+(* CONTROL FLOW & PATTERN MATCHING *)
+// LOOPS
+// For loop, start `to` end (inclusive)
+for i=1 to 3 do
+    printfn $"For: {i}"
+
+// We can reverse a for loop with start `downto` end
+for i=3 downto 1 do
+    printfn $"Rev For: {i}"
+
+// We can for loop over a list
+for task in to_dos do
+    printfn $"{task.ToUpper()}"
+
+// We can also use this to populate a new list
+let to_dos_upper = [for task in to_dos do task.ToUpper()]
+printfn $"{to_dos_upper}"
+
+// While loop
+printfn $"NOW ENTERING ECHO LOOP! TYPE SOMETHING AND PRESS RETURN!"
+let mutable input = ""
+
+// NOTE `!=` equality check in C-like languages is `<>` in F#!
+while (input <> "q") do
+    input <- Console.ReadLine()
+    printfn $"Echo: {input} (q to exit loop!)"
+
+// CONDITIONAL EXPRESSIONS
+// if/el(se )if/else
+let process_file (filename: string) =
+    let file_ext = Path.GetExtension(filename)
+
+    if file_ext = ".fs" then
+        printfn $"{file_ext} is an F# source file"
+    elif file_ext = ".fsx" then
+        printfn $"{file_ext} is an F# script file"
+    elif file_ext = ".fsproj" then
+        printfn $"{file_ext} is an F# project file"
+    else
+        printfn "Unknown file type!"
+
+process_file "Program.fs"
+process_file "Script.fsx"
+process_file "MyFirstFSharpApp.fsproj"
+process_file "README.md"
+
+// Exception handling
+// We can handle exceptions by using a try/with
+let divide x y =
+    try
+        Some(x/y)
+    with
+        | :? System.DivideByZeroException -> printfn "Cannot divide by zero"; None
+        | ex -> printfn $"Error: {ex.Message}"; None
+
+printfn $"{divide 10 2}" // Some
+printfn $"{divide 10 0}" // None
+
+// PATTERN MATCHING
+type Address = { HouseNumber: int; StreetName: string }
+type PhoneNumber = { Code: int; Number: string }
+
+// discriminated union
+type ContactMethod =
+    | PostalMail of Address
+    | Email of string
+    | VoiceMail of PhoneNumber
+
+// when pattern matching all patterns must be matched!
+// so here we have a pattern to match against all three methods in our discriminated union
+let send_message (message: string) (method: ContactMethod) =
+    match method with
+    | PostalMail { HouseNumber=h; StreetName=s } -> printfn $"Posting: {message} to {h} {s}"
+    | Email a -> printfn $"Emailing: {message} to {a}"
+    | VoiceMail { Code=c; Number=n } -> printfn $"Leaving +{c} {n} a voicemail saying: {message}"
+
+let my_message = "Put the bunny back in the box!"
+
+PostalMail { HouseNumber=10; StreetName="Downing Street"; }
+|> send_message my_message
+
+Email "keir.starmer.mp@parliament.uk"
+|> send_message my_message
+
+VoiceMail { Code=44; Number="1234 567890" }
+|> send_message my_message
